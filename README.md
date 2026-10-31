@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EventPilot 🎉
+
+> AI-powered celebration planner for budget-conscious Indian families.
+
+## Tech Stack
+
+- **Framework**: Next.js (App Router) with TypeScript (strict mode)
+- **Styling**: Tailwind CSS — dark theme with AA-contrast colours
+- **State**: Zustand (persisted to `localStorage`)
+- **Validation**: Zod
+- **Icons**: lucide-react
+- **Tests**: Vitest
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# 1. Clone the repo
+git clone <repo-url> && cd event-pilot
+
+# 2. Install dependencies
+npm install
+
+# 3. Create your env file
+cp .env.example .env.local
+# Then add your GEMINI_API_KEY in .env.local
+
+# 4. Start the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command         | Description                  |
+| --------------- | ---------------------------- |
+| `npm run dev`   | Start dev server             |
+| `npm run build` | Production build             |
+| `npm run start` | Serve production build       |
+| `npm run lint`  | Run ESLint                   |
+| `npm test`      | Run Vitest tests             |
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── api/gemini/route.ts   # Gemini API proxy (env access here only)
+│   ├── plan/page.tsx         # /plan workspace
+│   ├── layout.tsx            # Root layout with a11y landmarks
+│   ├── page.tsx              # Landing page
+│   └── globals.css           # Tailwind + dark theme tokens
+├── lib/
+│   └── schemas.ts            # Zod schemas
+└── store/
+    └── plan-store.ts         # Zustand store (persisted)
+tests/
+└── schemas.test.ts           # Placeholder + validation tests
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Accessibility
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Semantic landmarks: `<header>`, `<main>`, `<footer>`
+- Skip-to-content link for keyboard navigation
+- Visible `:focus-visible` ring on all interactive elements
+- Dark theme meets WCAG 2.1 AA contrast ratio
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
