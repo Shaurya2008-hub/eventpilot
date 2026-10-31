@@ -1,0 +1,463 @@
+"use client";
+
+import { usePlanStore } from "@/store/plan-store";
+import { diffDays } from "@/lib/timeline";
+import { BUDGET_CATEGORIES, type BudgetCategory } from "@/lib/budget";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  IndianRupee,
+  Sparkles,
+  RotateCcw,
+  CheckCircle2,
+  AlertCircle,
+  Lightbulb,
+  FileText,
+  Clock,
+} from "lucide-react";
+import { getLocalTodayString } from "./GuidedPlanForm";
+
+const CATEGORY_DISPLAY_NAMES: Record<BudgetCategory, string> = {
+  venue: "Venue & Hall",
+  catering: "Catering & Food",
+  decor: "Decor & Lighting",
+  photography: "Photography & Video",
+  entertainment: "Music & Entertainment",
+  contingency: "Emergency Contingency",
+};
+
+export function PlanView() {
+  const plan = usePlanStore((s) => s.plan);
+  const startNewPlan = usePlanStore((s) => s.startNewPlan);
+  const toggleChecklistItem = usePlanStore((s) => s.toggleChecklistItem);
+
+  if (!plan) return null;
+
+  const today = getLocalTodayString();
+  const daysToGo = diffDays(plan.input.eventDate, today);
+
+  const totalBudget = plan.input.budget;
+
+  // Capitalise only the occasion (e.g. "wedding" -> "Wedding in Jaipur")
+  const formattedTitle = `${
+    plan.input.occasion.charAt(0).toUpperCase() + plan.input.occasion.slice(1)
+  } in ${plan.input.city}`;
+
+  // Map task IDs to human-readable titles
+  const taskTitleMap = new Map(plan.timeline.map((t) => [t.id, t.title]));
+
+  return (
+    <div
+      aria-live="polite"
+      className="mx-auto max-w-4xl space-y-10 px-4 py-8 sm:px-6"
+    >
+      {/* 1. Header Section */}
+      <header className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-accent">
+                {plan.input.occasion} Celebration
+              </span>
+              {/* Status Badge: Meaningful color and text */}
+              {plan.source === "fallback" ? (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-400"
+                  title="Generated offline using built-in deterministic planning algorithm"
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-amber-400"
+                    aria-hidden="true"
+                  />
+                  Built-in planner
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-400">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-purple-400"
+                    aria-hidden="true"
+                  />
+                  AI-assisted
+                </span>
+              )}
+            </div>
+
+            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+              {formattedTitle}
+            </h1>
+
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted">
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-accent" aria-hidden="true" />
+                <time dateTime={plan.input.eventDate}>
+                  {plan.input.eventDate}
+                </time>
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 text-accent" aria-hidden="true" />
+                {plan.input.city}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-accent" aria-hidden="true" />
+                {plan.input.guests.toLocaleString("en-IN")} Guests
+              </span>
+              <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                <IndianRupee
+                  className="h-4 w-4 text-accent"
+                  aria-hidden="true"
+                />
+                ₹{plan.input.budget.toLocaleString("en-IN")} Total
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-3 sm:items-end">
+            {/* Days to go counter */}
+            <div className="rounded-xl border border-border bg-background px-4 py-2 text-center sm:text-right">
+              <span className="block text-2xl font-black text-accent sm:text-3xl">
+                {daysToGo > 0 ? daysToGo : 0}
+              </span>
+              <span className="text-xs font-medium uppercase tracking-wider text-muted">
+                {daysToGo === 1 ? "Day to go" : "Days to go"}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={startNewPlan}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Start a new plan</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* 2. Budget Allocation & CSS Bar Chart */}
+      <section aria-labelledby="budget-heading" className="space-y-6">
+        <header>
+          <h2
+            id="budget-heading"
+            className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+          >
+            Budget Allocation
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Optimized distribution using the Largest-Remainder Method,
+            accounting for occasion and guest count.
+          </p>
+        </header>
+
+        {/* CSS Bar Chart */}
+        <div
+          role="region"
+          aria-label="Visual Budget Distribution Bar Chart"
+          className="rounded-xl border border-border bg-surface p-5"
+        >
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
+            Category Breakdown (CSS Chart)
+          </h3>
+          <div className="mt-4 space-y-3.5">
+            {BUDGET_CATEGORIES.map((cat) => {
+              const amount = plan.budget[cat];
+              const pct = totalBudget > 0 ? (amount / totalBudget) * 100 : 0;
+              const formattedPct = pct.toFixed(1);
+
+              return (
+                <div key={cat} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="text-foreground">
+                      {CATEGORY_DISPLAY_NAMES[cat]}
+                    </span>
+                    <span className="text-muted">
+                      <span className="font-semibold text-foreground">
+                        ₹{amount.toLocaleString("en-IN")}
+                      </span>{" "}
+                      ({formattedPct}%)
+                    </span>
+                  </div>
+                  {/* CSS progress track and bar */}
+                  <div
+                    className="h-2.5 w-full overflow-hidden rounded-full bg-background"
+                    role="progressbar"
+                    aria-valuenow={amount}
+                    aria-valuemin={0}
+                    aria-valuemax={totalBudget}
+                    aria-label={`${CATEGORY_DISPLAY_NAMES[cat]}: ${formattedPct}%`}
+                  >
+                    <div
+                      className="h-full rounded-full bg-accent transition-all duration-300"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Plain HTML Table */}
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+          <table className="w-full text-left text-sm">
+            <caption className="sr-only">
+              Exact rupee allocations per celebration category
+            </caption>
+            <thead className="border-b border-border bg-background/50 text-xs font-semibold uppercase tracking-wider text-muted">
+              <tr>
+                <th scope="col" className="px-4 py-3 sm:px-6">
+                  Category
+                </th>
+                <th scope="col" className="px-4 py-3 text-right sm:px-6">
+                  Share
+                </th>
+                <th scope="col" className="px-4 py-3 text-right sm:px-6">
+                  Amount (INR)
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {BUDGET_CATEGORIES.map((cat) => {
+                const amount = plan.budget[cat];
+                const pct =
+                  totalBudget > 0 ? ((amount / totalBudget) * 100).toFixed(1) : "0.0";
+                return (
+                  <tr
+                    key={cat}
+                    className="hover:bg-surface-hover/50 transition-colors"
+                  >
+                    <th scope="row" className="px-4 py-3 font-medium sm:px-6">
+                      {CATEGORY_DISPLAY_NAMES[cat]}
+                    </th>
+                    <td className="px-4 py-3 text-right text-xs text-muted sm:px-6">
+                      {pct}%
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-foreground sm:px-6">
+                      ₹{amount.toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot className="border-t-2 border-border bg-background/80 font-bold text-foreground">
+              <tr>
+                <th scope="row" className="px-4 py-3.5 sm:px-6">
+                  Total Budget
+                </th>
+                <td className="px-4 py-3.5 text-right text-xs text-muted sm:px-6">
+                  100%
+                </td>
+                <td className="px-4 py-3.5 text-right text-base text-accent sm:px-6">
+                  ₹{totalBudget.toLocaleString("en-IN")}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      {/* 3. Timeline Section */}
+      <section aria-labelledby="timeline-heading" className="space-y-6">
+        <header>
+          <h2
+            id="timeline-heading"
+            className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+          >
+            Planning Timeline
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Ordered roadmap leading up to celebration day.
+          </p>
+        </header>
+
+        <ol
+          className="relative space-y-4 border-l-2 border-border pl-6 sm:pl-8"
+          aria-label="Chronological celebration task timeline"
+        >
+          {plan.timeline.map((task, idx) => (
+            <li key={task.id} className="relative">
+              {/* Dot marker */}
+              <span
+                className={`absolute -left-[31px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 bg-surface sm:-left-[39px] ${
+                  task.compressed
+                    ? "border-amber-400 bg-amber-400/20"
+                    : "border-accent bg-background"
+                }`}
+                aria-hidden="true"
+              />
+
+              <article className="rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover/60">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-semibold text-muted">
+                      #{idx + 1}
+                    </span>
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {task.title}
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {task.compressed && (
+                      <span
+                        className="inline-flex items-center rounded-full border border-amber-600/50 bg-amber-950/60 px-2 py-0.5 text-[10px] font-semibold text-amber-300"
+                        title="Timeline lead time was compressed proportionally to fit before the event"
+                      >
+                        Compressed
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 rounded bg-background px-2 py-1 text-xs font-medium text-foreground">
+                      <Clock className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+                      Due {task.dueDate}
+                    </span>
+                  </div>
+                </div>
+
+                {task.dependsOn.length > 0 && (
+                  <p className="mt-2 text-xs text-muted">
+                    Depends on:{" "}
+                    <span className="font-medium text-foreground/90">
+                      {task.dependsOn
+                        .map((depId) => taskTitleMap.get(depId) ?? depId)
+                        .join(", ")}
+                    </span>
+                  </p>
+                )}
+              </article>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* 4. Vendor Checklist Section */}
+      <section aria-labelledby="vendor-heading" className="space-y-6">
+        <header>
+          <h2
+            id="vendor-heading"
+            className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+          >
+            Vendor Action Checklists
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Practical requirements per vendor category. Check off items as you
+            lock them in.
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {plan.vendorChecklist.map((vendorGroup, vIdx) => {
+            const completedCount = vendorGroup.items.filter((i) => i.done).length;
+            const allDone =
+              vendorGroup.items.length > 0 &&
+              completedCount === vendorGroup.items.length;
+
+            return (
+              <div
+                key={vendorGroup.vendor}
+                className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5"
+              >
+                <div>
+                  <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                    <h3 className="text-base font-bold capitalize text-foreground">
+                      {vendorGroup.vendor} Checklist
+                    </h3>
+                    <span
+                      className={`text-xs font-semibold ${
+                        allDone ? "text-success font-bold" : "text-muted"
+                      }`}
+                    >
+                      {completedCount} / {vendorGroup.items.length} done
+                    </span>
+                  </div>
+
+                  <ul className="mt-3.5 space-y-3">
+                    {vendorGroup.items.map((item, iIdx) => {
+                      const inputId = `chk-${vendorGroup.vendor}-${iIdx}`;
+                      return (
+                        <li key={item.label} className="flex items-start gap-2.5">
+                          <input
+                            id={inputId}
+                            type="checkbox"
+                            checked={item.done}
+                            onChange={() => toggleChecklistItem(vIdx, iIdx)}
+                            className="mt-0.5 h-4 w-4 rounded border-border bg-background text-accent focus:ring-accent focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                          <label
+                            htmlFor={inputId}
+                            className={`text-xs leading-relaxed transition-colors cursor-pointer ${
+                              item.done
+                                ? "text-muted line-through"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {item.label}
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 5. Theme Ideas & Celebration Notes */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Theme Ideas */}
+        <section
+          aria-labelledby="ideas-heading"
+          className="rounded-xl border border-border bg-surface p-6 space-y-4"
+        >
+          <header className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-accent" aria-hidden="true" />
+            <h2 id="ideas-heading" className="text-lg font-bold text-foreground">
+              Tailored Theme Ideas
+            </h2>
+          </header>
+
+          <ol className="space-y-3.5 text-sm" aria-label="Celebration theme concepts">
+            {plan.ideas.map((idea, idx) => (
+              <li
+                key={idx}
+                className="rounded-lg border border-border/60 bg-background/50 p-3.5"
+              >
+                <span className="block text-xs font-bold uppercase tracking-wider text-accent">
+                  Concept #{idx + 1}
+                </span>
+                <p className="mt-1 text-sm text-foreground">{idea}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Celebration Notes */}
+        <section
+          aria-labelledby="notes-heading"
+          className="rounded-xl border border-border bg-surface p-6 space-y-4"
+        >
+          <header className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-accent" aria-hidden="true" />
+            <h2 id="notes-heading" className="text-lg font-bold text-foreground">
+              Important Celebration Notes
+            </h2>
+          </header>
+
+          <ul className="space-y-3 text-sm" aria-label="Celebration advisory notes">
+            {plan.notes.map((note, idx) => (
+              <li
+                key={idx}
+                className="rounded-lg border border-border/60 bg-background/50 p-3.5 text-xs sm:text-sm text-foreground/90 leading-relaxed"
+              >
+                {note}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </div>
+  );
+}
+

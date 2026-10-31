@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { FooterYear } from "@/components/FooterYear";
 
 export const metadata: Metadata = {
   title: "EventPilot — AI Celebration Planner",
@@ -55,7 +56,7 @@ export default function RootLayout({
 
         <footer className="border-t border-border py-6 text-center text-xs text-muted">
           <p>
-            &copy; 2025 EventPilot &mdash; Made with ❤️ for budget-conscious
+            &copy; <FooterYear /> EventPilot &mdash; Made with ❤️ for budget-conscious
             Indian families
           </p>
         </footer>

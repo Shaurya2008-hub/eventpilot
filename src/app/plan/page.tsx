@@ -1,108 +1,89 @@
 "use client";
 
-import { Send } from "lucide-react";
+import { useEffect, useState } from "react";
 import { usePlanStore } from "@/store/plan-store";
-import { useState } from "react";
+import { GuidedPlanForm } from "@/components/GuidedPlanForm";
+import { PlanView } from "@/components/PlanView";
+import { Sparkles, ArrowRight, RotateCcw } from "lucide-react";
 
 export default function PlanPage() {
-  const { eventName, budget, setEventName, setBudget, reset } = usePlanStore();
-  const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
+  const [hasHydrated, setHasHydrated] = useState(false);
+  const plan = usePlanStore((s) => s.plan);
+  const startNewPlan = usePlanStore((s) => s.startNewPlan);
+  const [mode, setMode] = useState<"prompt" | "view" | "form">("prompt");
 
-  const handleGenerate = async () => {
-    setStatus("loading");
-    try {
-      const res = await fetch("/api/gemini", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventName, budget }),
-      });
-      if (!res.ok) throw new Error("API request failed");
-      // Future: parse and display AI suggestions
-      setStatus("done");
-    } catch {
-      setStatus("idle");
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
+  // When no plan exists, open the guided form
+  useEffect(() => {
+    if (hasHydrated && !plan) {
+      setMode("form");
     }
-  };
+  }, [hasHydrated, plan]);
 
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Plan Your Event</h1>
-      <p className="mt-2 text-sm text-muted">
-        Fill in the details and let AI craft your celebration plan.
-      </p>
+  // When a plan is newly set, immediately switch to the plan view
+  useEffect(() => {
+    if (plan && mode === "form") {
+      setMode("view");
+    }
+  }, [plan, mode]);
 
-      <form
-        className="mt-8 space-y-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void handleGenerate();
-        }}
-      >
-        {/* Event name */}
-        <div>
-          <label
-            htmlFor="event-name"
-            className="block text-sm font-medium text-foreground"
-          >
-            Event Name
-          </label>
-          <input
-            id="event-name"
-            type="text"
-            value={eventName}
-            onChange={(e) => setEventName(e.target.value)}
-            placeholder="e.g. Diwali Party, Haldi Ceremony"
-            className="mt-1 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            required
-          />
+  if (!hasHydrated) {
+    return (
+      <div className="mx-auto flex min-h-[400px] max-w-2xl items-center justify-center p-8">
+        <p className="text-sm text-muted">Loading your celebration workspace…</p>
+      </div>
+    );
+  }
+
+  // If a saved plan exists and user enters /plan, present Continue / Start new options
+  if (plan && mode === "prompt") {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+        <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+          <Sparkles className="h-6 w-6" aria-hidden="true" />
         </div>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          Welcome Back to EventPilot
+        </h1>
+        <p className="mt-2 text-sm text-muted">
+          You have an existing celebration plan saved for{" "}
+          <strong className="text-foreground capitalize">
+            {plan.input.occasion} in {plan.input.city}
+          </strong>{" "}
+          ({plan.input.eventDate}).
+        </p>
 
-        {/* Budget */}
-        <div>
-          <label
-            htmlFor="budget"
-            className="block text-sm font-medium text-foreground"
-          >
-            Budget (₹)
-          </label>
-          <input
-            id="budget"
-            type="number"
-            min={0}
-            value={budget}
-            onChange={(e) => setBudget(Number(e.target.value))}
-            placeholder="e.g. 25000"
-            className="mt-1 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            required
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-4">
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <button
-            type="submit"
-            disabled={status === "loading"}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-accent-hover disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring"
+            type="button"
+            onClick={() => setMode("view")}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
           >
-            <Send className="h-4 w-4" aria-hidden="true" />
-            {status === "loading" ? "Generating…" : "Generate Plan"}
+            <span>Continue my plan</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
-            onClick={reset}
-            className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:text-foreground hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => {
+              startNewPlan();
+              setMode("form");
+            }}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-6 py-2.5 text-sm font-semibold text-foreground hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
           >
-            Reset
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            <span>Start a new plan</span>
           </button>
         </div>
+      </div>
+    );
+  }
 
-        {status === "done" && (
-          <p className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
-            ✅ Plan generated! (AI integration coming soon)
-          </p>
-        )}
-      </form>
-    </div>
-  );
+  if (plan && mode === "view") {
+    return <PlanView />;
+  }
+
+  return <GuidedPlanForm />;
 }
-
