@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   calculateBudget,
   rebalance,
+  allocateByWeights,
   InvalidBudgetError,
   BUDGET_CATEGORIES,
   type Occasion,
@@ -156,6 +157,82 @@ describe("rebalance", () => {
 
       const rebalanced = rebalance(initial, randomCategory, randomNewValue);
       checkInvariant(rebalanced, totalBudget);
+    }
+  });
+});
+
+describe("allocateByWeights", () => {
+  it("allocates budget according to custom weights and satisfies the invariant", () => {
+    const total = 500000;
+    const weights = {
+      venue: 40,
+      catering: 30,
+      decor: 15,
+      photography: 5,
+      entertainment: 5,
+      contingency: 5,
+    };
+    const alloc = allocateByWeights(total, weights);
+    checkInvariant(alloc, total);
+    expect(alloc.venue).toBeGreaterThan(alloc.catering);
+    expect(alloc.catering).toBeGreaterThan(alloc.decor);
+  });
+
+  it("handles negative and NaN weights by clamping them to 0", () => {
+    const total = 200000;
+    const weights = {
+      venue: 50,
+      catering: -20,
+      decor: NaN,
+      photography: 30,
+      entertainment: 0,
+      contingency: 20,
+    };
+    const alloc = allocateByWeights(total, weights);
+    checkInvariant(alloc, total);
+    expect(alloc.catering).toBe(0);
+    expect(alloc.decor).toBe(0);
+    expect(alloc.entertainment).toBe(0);
+    expect(alloc.venue + alloc.photography + alloc.contingency).toBe(total);
+  });
+
+  it("falls back to equal weights if all weights are 0 or clamped to 0", () => {
+    const total = 60000;
+    const allZeroWeights = {
+      venue: 0,
+      catering: -5,
+      decor: NaN,
+      photography: 0,
+      entertainment: 0,
+      contingency: 0,
+    };
+    const alloc = allocateByWeights(total, allZeroWeights);
+    checkInvariant(alloc, total);
+    for (const cat of BUDGET_CATEGORIES) {
+      expect(alloc[cat]).toBe(10000);
+    }
+  });
+
+  it("throws InvalidBudgetError for non-positive or non-integer budgets", () => {
+    const validWeights = { venue: 10, catering: 10, decor: 10, photography: 10, entertainment: 10, contingency: 10 };
+    expect(() => allocateByWeights(0, validWeights)).toThrow(InvalidBudgetError);
+    expect(() => allocateByWeights(-5000, validWeights)).toThrow(InvalidBudgetError);
+    expect(() => allocateByWeights(5000.5, validWeights)).toThrow(InvalidBudgetError);
+  });
+
+  it("satisfies the invariant across 1000 random weight sets", () => {
+    for (let i = 0; i < 1000; i++) {
+      const totalBudget = Math.floor(Math.random() * 5_000_000) + 1;
+      const randomWeights = {
+        venue: (Math.random() - 0.2) * 100,
+        catering: (Math.random() - 0.2) * 100,
+        decor: Math.random() > 0.8 ? NaN : Math.random() * 50,
+        photography: Math.random() * 30,
+        entertainment: (Math.random() - 0.5) * 20,
+        contingency: Math.random() * 20,
+      };
+      const alloc = allocateByWeights(totalBudget, randomWeights);
+      checkInvariant(alloc, totalBudget);
     }
   });
 });

@@ -60,10 +60,23 @@ export function PlanView() {
               <span className="text-xs font-bold uppercase tracking-wider text-accent">
                 {plan.input.occasion} Celebration
               </span>
-              {/* Status Badge: Meaningful color and text */}
-              {plan.source === "fallback" ? (
+              {/* Status Badge: Meaningful color, text, and accessible text label */}
+              {plan.source === "ai" ? (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-400"
+                  aria-label={`Plan Source: AI plan (${plan.modelUsed || "Gemini"})`}
+                  title={`Plan generated using AI model: ${plan.modelUsed || "Gemini"}`}
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-purple-400"
+                    aria-hidden="true"
+                  />
+                  AI plan ({plan.modelUsed || "Gemini"})
+                </span>
+              ) : (
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-400"
+                  aria-label="Plan Source: Built-in planner"
                   title="Generated offline using built-in deterministic planning algorithm"
                 >
                   <span
@@ -71,14 +84,6 @@ export function PlanView() {
                     aria-hidden="true"
                   />
                   Built-in planner
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-400">
-                  <span
-                    className="h-1.5 w-1.5 rounded-full bg-purple-400"
-                    aria-hidden="true"
-                  />
-                  AI-assisted
                 </span>
               )}
             </div>

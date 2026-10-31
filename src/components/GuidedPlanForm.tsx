@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles, ArrowRight, ArrowLeft } from "lucide-react";
-import { generateFallbackPlan } from "@/lib/fallbackPlanner";
+import { requestPlan } from "@/lib/planClient";
 import { createPlanInputSchema, type PlanInput } from "@/lib/schemas";
 import { usePlanStore } from "@/store/plan-store";
 import type { Occasion } from "@/lib/budget";
@@ -48,6 +48,8 @@ export function GuidedPlanForm() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   /**
    * Re-validates a field as it changes and clears its error as soon as it becomes valid.
@@ -296,26 +298,37 @@ export function GuidedPlanForm() {
     setStep(2);
   };
 
-  const handleCreatePlan = () => {
-    const mustHaves = formData.mustHavesText
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
+  const handleCreatePlan = async () => {
+    setIsCreating(true);
+    setCreateError(null);
 
-    const planInput: PlanInput = {
-      occasion: formData.occasion,
-      eventDate: formData.eventDate,
-      city: formData.city.trim(),
-      guests: Number(formData.guests),
-      budget: Number(formData.budget),
-      atmosphere: formData.atmosphere.trim(),
-      mustHaves,
-      dietary: formData.dietary.trim(),
-      accessibilityNeeds: formData.accessibilityNeeds.trim(),
-    };
+    try {
+      const mustHaves = formData.mustHavesText
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
 
-    const generated = generateFallbackPlan(planInput, today);
-    setPlan(generated);
+      const planInput: PlanInput = {
+        occasion: formData.occasion,
+        eventDate: formData.eventDate,
+        city: formData.city.trim(),
+        guests: Number(formData.guests),
+        budget: Number(formData.budget),
+        atmosphere: formData.atmosphere.trim(),
+        mustHaves,
+        dietary: formData.dietary.trim(),
+        accessibilityNeeds: formData.accessibilityNeeds.trim(),
+      };
+
+      const plan = await requestPlan(planInput, today);
+      setPlan(plan);
+    } catch {
+      setCreateError(
+        "Failed to generate plan. Please verify your inputs and try again."
+      );
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -883,22 +896,48 @@ export function GuidedPlanForm() {
             </div>
           </div>
 
+          {/* Loading announcement */}
+          {isCreating && (
+            <div aria-live="polite" className="sr-only">
+              Creating your plan…
+            </div>
+          )}
+
+          {/* Error alert with retry button */}
+          {createError && (
+            <div
+              role="alert"
+              className="flex items-center justify-between gap-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+            >
+              <p>{createError}</p>
+              <button
+                type="button"
+                onClick={handleCreatePlan}
+                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between pt-4">
             <button
               type="button"
+              disabled={isCreating}
               onClick={handleBackToStep2}
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-surface-hover disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               <span>Back</span>
             </button>
             <button
               type="button"
+              disabled={isCreating}
               onClick={handleCreatePlan}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-accent-hover disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Sparkles className="h-4 w-4" aria-hidden="true" />
-              <span>Create my plan</span>
+              <span>{isCreating ? "Creating your plan…" : "Create my plan"}</span>
             </button>
           </div>
         </section>

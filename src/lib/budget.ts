@@ -212,3 +212,50 @@ export function rebalance(
   };
 }
 
+/**
+ * Allocates an integer totalBudget according to custom weights across the six categories
+ * using the Largest-Remainder Method (Hare-Niemeyer method).
+ *
+ * Negative numbers and NaN weights become 0. If all weights are 0, falls back to equal weights.
+ * Guarantees integer rupee allocations summing exactly to totalBudget.
+ *
+ * @param totalBudget - Positive integer budget in INR.
+ * @param weights - Record or partial record of category weights.
+ * @returns Non-negative integer rupee allocations summing exactly to totalBudget.
+ * @throws {InvalidBudgetError} if totalBudget is not a positive integer.
+ */
+export function allocateByWeights(
+  totalBudget: number,
+  weights: Record<BudgetCategory, number> | Partial<Record<BudgetCategory, number>>
+): BudgetAllocations {
+  if (
+    typeof totalBudget !== "number" ||
+    !Number.isInteger(totalBudget) ||
+    totalBudget <= 0
+  ) {
+    throw new InvalidBudgetError(
+      `totalBudget must be a positive integer, received: ${totalBudget}`
+    );
+  }
+
+  const effectiveWeights: { category: BudgetCategory; weight: number }[] =
+    BUDGET_CATEGORIES.map((category) => {
+      const raw = weights[category];
+      const clean =
+        typeof raw === "number" && Number.isFinite(raw) && raw > 0 ? raw : 0;
+      return { category, weight: clean };
+    });
+
+  const sumWeights = effectiveWeights.reduce(
+    (acc, curr) => acc + curr.weight,
+    0
+  );
+
+  const finalWeights =
+    sumWeights > 0
+      ? effectiveWeights
+      : BUDGET_CATEGORIES.map((category) => ({ category, weight: 1 }));
+
+  return distributeLargestRemainder(totalBudget, finalWeights);
+}
+

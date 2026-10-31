@@ -154,6 +154,8 @@ export const planSchema = z.object({
   vendorChecklist: z.array(vendorChecklistSchema),
   ideas: z.array(z.string()),
   notes: z.array(z.string()),
+  modelUsed: z.string().optional(),
+  fallbackReason: z.enum(["no_api_key", "all_models_failed"]).optional(),
 });
 
 export type Plan = {
@@ -164,4 +166,29 @@ export type Plan = {
   vendorChecklist: { vendor: string; items: { label: string; done: boolean }[] }[];
   ideas: string[];
   notes: string[];
+  modelUsed?: string;
+  fallbackReason?: "no_api_key" | "all_models_failed";
 };
+
+// -------------------------------------------------------------
+// Route API Request Schemas
+// -------------------------------------------------------------
+
+export const planApiRequestSchema = z.discriminatedUnion("mode", [
+  z.object({
+    mode: z.literal("plan"),
+    input: planInputSchema,
+    today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  }),
+  z.object({
+    mode: z.literal("chat"),
+    plan: z.any(),
+    question: z
+      .string()
+      .trim()
+      .min(1, "Question cannot be empty")
+      .max(500, "Question is too long"),
+  }),
+]);
+
+export type PlanApiRequest = z.infer<typeof planApiRequestSchema>;
