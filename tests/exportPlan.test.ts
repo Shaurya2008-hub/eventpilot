@@ -33,7 +33,7 @@ describe("exportPlan pure module", () => {
 
     it("sanitizes occasion with spaces or special characters", () => {
       const plan = createSamplePlan();
-      plan.input.occasion = "community" as any;
+      plan.input.occasion = "community" as unknown as Plan["input"]["occasion"];
       plan.input.eventDate = "2027-02-15";
       const filename = buildPlanExportFilename(plan);
       expect(filename).toBe("community-2027-02-15.txt");
@@ -41,7 +41,7 @@ describe("exportPlan pure module", () => {
 
     it("handles missing occasion and date gracefully with fallbacks", () => {
       const minimalPlan = {
-        input: {} as any,
+        input: {} as unknown as Plan["input"],
       } as Plan;
       const filename = buildPlanExportFilename(minimalPlan);
       expect(filename).toBe("celebration-undated.txt");
@@ -156,7 +156,7 @@ describe("exportPlan pure module", () => {
     });
 
     it("handles null plan safely", () => {
-      const text = buildPlanText(null as any);
+      const text = buildPlanText(null as unknown as Plan);
       expect(text).toBe("");
     });
   });

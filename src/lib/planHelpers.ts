@@ -11,8 +11,10 @@ export interface DelayTaskResult {
 
 /**
  * Updates a single category allocation using proportional rebalancing.
- * Guarantees that the sum of all categories equals the total plan budget,
- * and preserves the plan's metadata and originalBudget.
+ * @param plan - Current celebration plan.
+ * @param category - Category to update.
+ * @param newValue - New rupee value.
+ * @returns Updated Plan preserving invariants.
  */
 export function applyBudgetChange(
   plan: Plan,
@@ -30,8 +32,9 @@ export function applyBudgetChange(
 }
 
 /**
- * Resets the budget allocations back to the original suggested split
- * that was created when the plan was first generated.
+ * Resets budget allocations back to the initial suggested split.
+ * @param plan - Current celebration plan.
+ * @returns Plan with original budget allocations restored.
  */
 export function resetPlanBudget(plan: Plan): Plan {
   const original = plan.originalBudget ?? { ...plan.budget };
@@ -44,6 +47,9 @@ export function resetPlanBudget(plan: Plan): Plan {
 
 /**
  * Toggles a task's status between "todo" and "done".
+ * @param plan - Current celebration plan.
+ * @param taskId - Identifier of the task to toggle.
+ * @returns Updated Plan with task status flipped.
  */
 export function toggleTaskStatus(plan: Plan, taskId: string): Plan {
   const updatedTimeline = plan.timeline.map((task) => {
@@ -59,9 +65,11 @@ export function toggleTaskStatus(plan: Plan, taskId: string): Plan {
 }
 
 /**
- * Delays a task by N days and cascades date shifts to dependent tasks using reflow().
- * Does not modify tasks with status "done".
- * If reflow rejects the change (e.g. date past event date), catches the error and returns it safely.
+ * Delays a task by N days and cascades date shifts to dependent tasks.
+ * @param plan - Current celebration plan.
+ * @param taskId - Identifier of the task to delay.
+ * @param delayDays - Number of days to postpone the task.
+ * @returns Result object with updated Plan or error message.
  */
 export function delayTaskInPlan(
   plan: Plan,

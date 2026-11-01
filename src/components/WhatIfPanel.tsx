@@ -40,7 +40,7 @@ export function WhatIfPanel() {
       setGuestsInput(String(plan.input.guests));
       setDateInput(plan.input.eventDate);
     }
-  }, [plan?.input.budget, plan?.input.guests, plan?.input.eventDate]);
+  }, [plan]);
 
   if (!plan) return null;
 

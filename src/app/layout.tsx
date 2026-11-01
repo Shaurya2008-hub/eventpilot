@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 import { FooterYear } from "@/components/FooterYear";
 
@@ -21,29 +22,29 @@ export default function RootLayout({
 
         <header className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur supports-[backdrop-filter]:bg-surface/60 no-print">
           <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-            <a
+            <Link
               href="/"
               className="text-lg font-bold tracking-tight text-accent"
             >
               🎉 EventPilot
-            </a>
+            </Link>
             <nav aria-label="Main navigation">
               <ul className="flex gap-6 text-sm font-medium">
                 <li>
-                  <a
+                  <Link
                     href="/"
                     className="text-muted hover:text-foreground transition-colors"
                   >
                     Home
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
+                  <Link
                     href="/plan"
                     className="text-muted hover:text-foreground transition-colors"
                   >
                     Plan
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </nav>

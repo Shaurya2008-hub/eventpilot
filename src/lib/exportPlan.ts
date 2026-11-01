@@ -11,8 +11,9 @@ export const CATEGORY_DISPLAY_NAMES: Record<BudgetCategory, string> = {
 };
 
 /**
- * Builds the standard export filename for a celebration plan:
- * e.g., "wedding-2026-12-31.txt"
+ * Builds the standard export filename for a celebration plan.
+ * @param plan - Celebration plan object.
+ * @returns Sanitized export filename string.
  */
 export function buildPlanExportFilename(plan: Plan): string {
   const occasion = (plan?.input?.occasion || "celebration")
@@ -24,11 +25,9 @@ export function buildPlanExportFilename(plan: Plan): string {
 }
 
 /**
- * Pure function that generates a well-structured plain-text summary of a Plan.
- * Includes: occasion, date, city, guests, budget total, category breakdown,
- * task timeline with dates and status, vendor checklist, theme ideas, and notes.
- *
- * Handles missing or optional fields gracefully.
+ * Generates a well-structured plain-text summary of a celebration Plan.
+ * @param plan - Celebration plan object.
+ * @returns Plain-text summary of plan details, budget, timeline, and checklists.
  */
 export function buildPlanText(plan: Plan): string {
   if (!plan) return "";
@@ -187,6 +186,8 @@ export function buildPlanText(plan: Plan): string {
 
 /**
  * Triggers a client-side download of the plan as a .txt file.
+ * @param plan - Celebration plan object.
+ * @returns Void.
  */
 export function downloadPlanAsText(plan: Plan): void {
   if (typeof window === "undefined" || !plan) return;

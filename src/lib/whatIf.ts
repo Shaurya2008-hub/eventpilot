@@ -1,12 +1,10 @@
 import {
   allocateByWeights,
   BUDGET_CATEGORIES,
-  type BudgetAllocations,
   type BudgetCategory,
 } from "./budget";
 import { reflow, TimelineError, diffDays } from "./timeline";
 import type { Plan } from "./schemas";
-import type { Task } from "./timeline";
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -43,10 +41,10 @@ function formatRupees(n: number): string {
 // ── buildExplanation ─────────────────────────────────────────────
 
 /**
- * Generates a short plain-English summary from numeric differences
- * between a before and after Plan.
- *
- * Example: "Budget +₹50,000: Catering +₹18,000, Decor -₹6,000; 3 tasks moved earlier"
+ * Generates a short plain-English summary from numeric differences between plans.
+ * @param before - Plan state before what-if scenario.
+ * @param after - Plan state after what-if adjustments.
+ * @returns Formatted summary string of changes.
  */
 export function buildExplanation(before: Plan, after: Plan): string {
   const parts: string[] = [];
@@ -122,24 +120,18 @@ export function buildExplanation(before: Plan, after: Plan): string {
 // ── applyWhatIf ──────────────────────────────────────────────────
 
 /**
- * Pure function that applies what-if scenario changes to a plan.
- *
- * - Budget: recomputes allocations using allocateByWeights with current
- *   allocations as weights, so sum equals the new total EXACTLY.
- * - Guests: shifts catering weight proportionally, then renormalises with
- *   allocateByWeights using the same exact-integer method.
- * - Date: uses reflow() with new event date; never moves done tasks.
- *   Rejects past dates with an error string.
- *
- * Preserves done tasks, checklist ticks, source badge, and unaffected
- * manual slider edits.
+ * Applies what-if scenario changes to a plan using exact integer arithmetic.
+ * @param plan - Original celebration plan.
+ * @param inputs - Requested scenario changes (budget, guests, eventDate).
+ * @param today - Current reference date string (YYYY-MM-DD).
+ * @returns Object with updated Plan, explanation, and optional error.
  */
 export function applyWhatIf(
   plan: Plan,
   inputs: WhatIfInputs,
   today: string
 ): WhatIfResult {
-  let working: Plan = {
+  const working: Plan = {
     ...plan,
     input: { ...plan.input },
     budget: { ...plan.budget },
@@ -262,8 +254,10 @@ export function applyWhatIf(
 // ── AI explanation enhancement ──────────────────────────────────
 
 /**
- * Builds a compact change summary string suitable for sending to the
- * Gemini chat endpoint for a trade-off explanation.
+ * Builds a compact change summary string suitable for trade-off explanation prompts.
+ * @param before - Plan state prior to change.
+ * @param after - Plan state after adjustments.
+ * @returns Human-readable change summary sentence.
  */
 export function buildChangeSummary(before: Plan, after: Plan): string {
   const lines: string[] = [];
@@ -311,10 +305,10 @@ export function buildChangeSummary(before: Plan, after: Plan): string {
 }
 
 /**
- * Attempts to fetch an AI-enhanced explanation from the existing chat
- * endpoint. Returns null on any failure or timeout (10s).
- * Never blocks the UI — the caller should use this as an async upgrade
- * to a local explanation.
+ * Fetches an AI-enhanced explanation from the chat endpoint with a 10s timeout.
+ * @param plan - Celebration plan context.
+ * @param changeSummary - Summary of changes made.
+ * @returns Explanation string or null on failure.
  */
 export async function fetchAiExplanation(
   plan: Plan,

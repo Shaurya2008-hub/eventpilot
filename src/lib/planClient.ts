@@ -76,12 +76,12 @@ export interface SendChatMessageHandlers {
 }
 
 /**
- * High-level orchestration for submitting a chat message:
- * 1. Appends user message
- * 2. Sets loading state to true
- * 3. Queries /api/gemini chat endpoint with 10s ceiling
- * 4. Appends assistant response or graceful inline error
- * 5. Clears loading state
+ * High-level orchestration for submitting a chat message and managing UI state.
+ * @param plan - Celebration plan context.
+ * @param question - User's query text.
+ * @param handlers - State updater callbacks for messages and loading.
+ * @param options - Optional timeout configuration.
+ * @returns Boolean indicating whether the question was processed.
  */
 export async function processChatSubmission(
   plan: Plan,

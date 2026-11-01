@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PartyPopper, IndianRupee, Sparkles } from "lucide-react";
 
 const features = [
@@ -35,13 +36,13 @@ export default function HomePage() {
           budget-conscious Indian families. From{" "}
           <em>mehendi</em> to <em>mundan</em>, we&apos;ve got you covered.
         </p>
-        <a
+        <Link
           href="/plan"
           className="mt-8 inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-background transition-colors hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Sparkles className="h-4 w-4" aria-hidden="true" />
           Start Planning
-        </a>
+        </Link>
       </section>
 
       {/* Features */}

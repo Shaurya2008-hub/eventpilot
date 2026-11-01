@@ -333,6 +333,8 @@ export function GuidedPlanForm() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
+      <h1 className="sr-only">Create Celebration Plan</h1>
+
       {/* Progress tracker */}
       <nav aria-label="Planning steps" className="mb-8">
         <ol className="flex items-center justify-between gap-2 border-b border-border pb-4 text-xs font-semibold sm:text-sm">

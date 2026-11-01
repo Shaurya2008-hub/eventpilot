@@ -336,6 +336,12 @@ export function PlanView() {
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted">{formattedPct}%</span>
                       <div className="relative flex items-center">
+                        <label
+                          htmlFor={numberId}
+                          className="sr-only"
+                        >
+                          {CATEGORY_DISPLAY_NAMES[cat]} rupee amount
+                        </label>
                         <span
                           className="pointer-events-none absolute left-2 text-xs text-muted"
                           aria-hidden="true"
@@ -648,6 +654,7 @@ export function PlanView() {
                           <button
                             type="button"
                             onClick={() => handleDelayTask(task.id)}
+                            aria-label={`Delay ${task.title}`}
                             className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             <span>Delay</span>

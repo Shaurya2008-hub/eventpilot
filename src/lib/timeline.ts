@@ -36,7 +36,9 @@ const MS_PER_DAY = 86_400_000;
 
 /**
  * Parses a YYYY-MM-DD date string into UTC milliseconds timestamp.
- * Throws InvalidDateError if format or calendar day is invalid.
+ * @param dateStr - YYYY-MM-DD date string.
+ * @returns UTC timestamp in milliseconds.
+ * @throws {InvalidDateError} if format or calendar day is invalid.
  */
 export function parseUTCDate(dateStr: string): number {
   if (typeof dateStr !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -63,6 +65,8 @@ export function parseUTCDate(dateStr: string): number {
 
 /**
  * Formats a UTC timestamp into a YYYY-MM-DD date-only string.
+ * @param timestamp - Milliseconds timestamp in UTC.
+ * @returns Formatted YYYY-MM-DD string.
  */
 export function formatUTCDate(timestamp: number): string {
   const d = new Date(timestamp);
@@ -74,6 +78,9 @@ export function formatUTCDate(timestamp: number): string {
 
 /**
  * Returns (dateA - dateB) in integer days using UTC arithmetic.
+ * @param dateA - First date string (YYYY-MM-DD).
+ * @param dateB - Second date string (YYYY-MM-DD).
+ * @returns Difference in whole days.
  */
 export function diffDays(dateA: string, dateB: string): number {
   const tA = parseUTCDate(dateA);
@@ -83,6 +90,9 @@ export function diffDays(dateA: string, dateB: string): number {
 
 /**
  * Adds an integer number of days to a YYYY-MM-DD date string using UTC arithmetic.
+ * @param dateStr - Base date string (YYYY-MM-DD).
+ * @param days - Number of days to add (positive or negative).
+ * @returns Resulting date string in YYYY-MM-DD format.
  */
 export function addDays(dateStr: string, days: number): string {
   const t = parseUTCDate(dateStr);
@@ -172,7 +182,9 @@ export const CELEBRATION_TASK_TEMPLATES: readonly TaskTemplate[] = [
 ] as const;
 
 /**
- * Topologically sorts task templates or tasks.
+ * Topologically sorts task templates or tasks according to dependency constraints.
+ * @param items - Task items with id and dependsOn lists.
+ * @returns Array of task ids in valid execution order.
  */
 export function getTopologicalOrder<T extends { id: string; dependsOn: string[] }>(
   items: readonly T[]
@@ -211,6 +223,8 @@ export function getTopologicalOrder<T extends { id: string; dependsOn: string[] 
 
 /**
  * Checks whether a list of tasks contains a dependency cycle.
+ * @param tasks - List of tasks to inspect.
+ * @returns True if a cycle exists, false otherwise.
  */
 export function detectCycle(tasks: readonly { id: string; dependsOn: string[] }[]): boolean {
   try {

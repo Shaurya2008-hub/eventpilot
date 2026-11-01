@@ -6,7 +6,7 @@ import {
   delayTaskInPlan,
 } from "@/lib/planHelpers";
 import { generateFallbackPlan } from "@/lib/fallbackPlanner";
-import { BUDGET_CATEGORIES, type BudgetCategory } from "@/lib/budget";
+import { BUDGET_CATEGORIES } from "@/lib/budget";
 import type { Plan } from "@/lib/schemas";
 
 function createTestPlan(): Plan {

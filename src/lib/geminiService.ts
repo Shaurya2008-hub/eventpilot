@@ -6,7 +6,7 @@ import { diffDays } from "./timeline";
 
 /**
  * Reads Gemini configuration from environment variables.
- * Never hardcodes model names in source.
+ * @returns Object containing the API key and parsed model identifiers.
  */
 export function getGeminiConfig(): { apiKey: string; models: string[] } {
   const apiKey = (process.env.GEMINI_API_KEY ?? "").trim();
@@ -54,6 +54,10 @@ const SYSTEM_INSTRUCTION = [
 
 /**
  * Low-level call to Gemini API using fetch with per-model timeout and key in header.
+ * @param model - Gemini model identifier.
+ * @param prompt - Prompt string sent to the model.
+ * @param options - Request options including system instruction, mime type, and timeout.
+ * @returns Raw text response from the Gemini model.
  */
 export async function callGemini(
   model: string,
@@ -169,7 +173,9 @@ function buildPlanPrompt(input: PlanInput): string {
 
 /**
  * Generates an AI-assisted celebration plan using the fallback model chain.
- * Falls back safely to generateFallbackPlan on any failure.
+ * @param input - Celebration inputs from user.
+ * @param today - Current reference date (YYYY-MM-DD).
+ * @returns Fully constructed celebration plan.
  */
 export async function generateAiPlan(
   input: PlanInput,
@@ -273,6 +279,9 @@ export async function generateAiPlan(
 
 /**
  * Answers questions about the celebration plan using Gemini with a local fallback.
+ * @param plan - Celebration plan context.
+ * @param question - User's inquiry.
+ * @returns Concise answer string.
  */
 export async function answerQuestion(
   plan: Plan,
@@ -329,6 +338,9 @@ export async function answerQuestion(
 
 /**
  * Deterministic keyword-matching question answering based on the plan.
+ * @param plan - Celebration plan context.
+ * @param question - User's inquiry.
+ * @returns Formatted answer string.
  */
 export function answerQuestionLocally(plan: Plan, question: string): string {
   const q = question.toLowerCase();

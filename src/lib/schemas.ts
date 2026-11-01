@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { BudgetAllocations, Occasion } from "./budget";
+import type { BudgetAllocations } from "./budget";
 import type { Task } from "./timeline";
 
 /** Schema for the request body sent to POST /api/gemini */
@@ -29,6 +29,11 @@ export type GeminiResponse = z.infer<typeof geminiResponseSchema>;
 // Celebration Plan Schemas
 // -------------------------------------------------------------
 
+/**
+ * Validates whether a string matches a calendar-valid YYYY-MM-DD date.
+ * @param val - Date string candidate.
+ * @returns True if valid calendar date, false otherwise.
+ */
 export function isValidDateOnly(val: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) return false;
   const [y, m, d] = val.split("-").map(Number);
@@ -58,7 +63,8 @@ export const occasionSchema = z.enum([
 
 /**
  * Creates a PlanInput schema with an optional reference 'today' date string.
- * Defaults reference date to current UTC date.
+ * @param referenceToday - Reference date (YYYY-MM-DD), defaults to UTC today.
+ * @returns Zod schema for validating celebration plan input.
  */
 export function createPlanInputSchema(referenceToday: string = getUTCTodayString()) {
   return z.object({

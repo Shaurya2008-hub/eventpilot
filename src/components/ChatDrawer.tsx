@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, type FormEvent } from "react";
 import { usePlanStore } from "@/store/plan-store";
-import { requestChatAnswer, processChatSubmission } from "@/lib/planClient";
+import { processChatSubmission } from "@/lib/planClient";
 import {
   MessageCircle,
   X,
