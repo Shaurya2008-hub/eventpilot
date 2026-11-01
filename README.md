@@ -66,31 +66,32 @@ Open http://localhost:3000 in your browser.
 
 ## Project Structure
 
+```
 src/
 ├── app/
-│ ├── api/gemini/route.ts # Gemini proxy — chat + plan-generation modes, env access only here
-│ ├── plan/page.tsx # Plan workspace
-│ ├── layout.tsx # Root layout, a11y landmarks
-│ ├── page.tsx # Landing page
-│ ├── globals.css # Tailwind + dark theme tokens + print styles
-│ └── components/
-│ ├── GuidedPlanForm.tsx # 3-step validated intake form
-│ ├── PlanView.tsx # Main plan workspace (budget, timeline, checklist, controls)
-│ ├── WhatIfPanel.tsx # Scenario planner (budget/guest/date re-planning)
-│ ├── ChatDrawer.tsx # Floating plan-aware AI assistant
-│ └── FooterYear.tsx
+│   ├── api/gemini/route.ts   # Gemini proxy — chat + plan-generation modes, env access only here
+│   ├── plan/page.tsx         # Plan workspace
+│   ├── layout.tsx            # Root layout, a11y landmarks
+│   ├── page.tsx               # Landing page
+│   ├── globals.css           # Tailwind + dark theme tokens + print styles
+│   └── components/
+│       ├── GuidedPlanForm.tsx  # 3-step validated intake form
+│       ├── PlanView.tsx        # Main plan workspace (budget, timeline, checklist, controls)
+│       ├── WhatIfPanel.tsx     # Scenario planner (budget/guest/date re-planning)
+│       ├── ChatDrawer.tsx      # Floating plan-aware AI assistant
+│       └── FooterYear.tsx
 ├── lib/
-│ ├── schemas.ts # Zod schemas
-│ ├── budget.ts # Largest-remainder allocation, rebalancing
-│ ├── timeline.ts # Dependency cascading (reflow)
-│ ├── whatIf.ts # Scenario re-planning + explanation generation
-│ ├── exportPlan.ts # Plain-text plan export
-│ ├── planHelpers.ts # Shared plan utilities
-│ ├── planClient.ts # Client-side API calls (plan gen + chat)
-│ ├── geminiService.ts # Server-side Gemini client, fallback chain
-│ └── fallbackPlanner.ts # Rule-based planner (used when AI fails)
+│   ├── schemas.ts             # Zod schemas
+│   ├── budget.ts              # Largest-remainder allocation, rebalancing
+│   ├── timeline.ts            # Dependency cascading (reflow)
+│   ├── whatIf.ts              # Scenario re-planning + explanation generation
+│   ├── exportPlan.ts          # Plain-text plan export
+│   ├── planHelpers.ts         # Shared plan utilities
+│   ├── planClient.ts          # Client-side API calls (plan gen + chat)
+│   ├── geminiService.ts       # Server-side Gemini client, fallback chain
+│   └── fallbackPlanner.ts     # Rule-based planner (used when AI fails)
 └── store/
-└── plan-store.ts # Zustand store (plan + chat history, persisted)
+    └── plan-store.ts          # Zustand store (plan + chat history, persisted)
 
 tests/
 ├── schemas.test.ts
@@ -102,6 +103,7 @@ tests/
 ├── whatIf.test.ts
 ├── exportPlan.test.ts
 └── chatDrawer.test.ts
+```
 
 
 ## Accessibility
