@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { usePlanStore } from "@/store/plan-store";
 import { diffDays } from "@/lib/timeline";
 import { BUDGET_CATEGORIES, type BudgetCategory } from "@/lib/budget";
@@ -8,13 +9,14 @@ import {
   MapPin,
   Users,
   IndianRupee,
-  Sparkles,
   RotateCcw,
   CheckCircle2,
   AlertCircle,
   Lightbulb,
   FileText,
   Clock,
+  Check,
+  Sliders,
 } from "lucide-react";
 import { getLocalTodayString } from "./GuidedPlanForm";
 
@@ -31,13 +33,27 @@ export function PlanView() {
   const plan = usePlanStore((s) => s.plan);
   const startNewPlan = usePlanStore((s) => s.startNewPlan);
   const toggleChecklistItem = usePlanStore((s) => s.toggleChecklistItem);
+  const updateCategoryBudget = usePlanStore((s) => s.updateCategoryBudget);
+  const resetBudgetToSuggested = usePlanStore((s) => s.resetBudgetToSuggested);
+  const toggleTaskStatus = usePlanStore((s) => s.toggleTaskStatus);
+  const delayTask = usePlanStore((s) => s.delayTask);
+
+  const [budgetAnnouncement, setBudgetAnnouncement] = useState<string>("");
+  const [delayDaysMap, setDelayDaysMap] = useState<Record<string, number>>({});
+  const [taskErrors, setTaskErrors] = useState<Record<string, string>>({});
+  const [taskAdjustedNotes, setTaskAdjustedNotes] = useState<
+    Record<string, string[]>
+  >({});
 
   if (!plan) return null;
 
   const today = getLocalTodayString();
   const daysToGo = diffDays(plan.input.eventDate, today);
-
   const totalBudget = plan.input.budget;
+  const liveTotal = BUDGET_CATEGORIES.reduce(
+    (acc, cat) => acc + plan.budget[cat],
+    0
+  );
 
   // Capitalise only the occasion (e.g. "wedding" -> "Wedding in Jaipur")
   const formattedTitle = `${
@@ -47,11 +63,74 @@ export function PlanView() {
   // Map task IDs to human-readable titles
   const taskTitleMap = new Map(plan.timeline.map((t) => [t.id, t.title]));
 
+  const handleBudgetChange = (cat: BudgetCategory, val: number) => {
+    const clampedVal = Math.max(0, Math.min(totalBudget, Math.round(val)));
+    updateCategoryBudget(cat, clampedVal);
+    const catName = CATEGORY_DISPLAY_NAMES[cat];
+    setBudgetAnnouncement(
+      `${catName} is now ₹${clampedVal.toLocaleString(
+        "en-IN"
+      )}; total remains ₹${totalBudget.toLocaleString("en-IN")}`
+    );
+  };
+
+  const handleResetBudget = () => {
+    resetBudgetToSuggested();
+    setBudgetAnnouncement(
+      `Budget allocations reset to suggested split; total remains ₹${totalBudget.toLocaleString(
+        "en-IN"
+      )}`
+    );
+  };
+
+  const handleToggleTask = (taskId: string) => {
+    toggleTaskStatus(taskId);
+    // Clear any delay errors for this task
+    if (taskErrors[taskId]) {
+      setTaskErrors((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+    }
+  };
+
+  const handleDelayTask = (taskId: string) => {
+    const days = delayDaysMap[taskId] ?? 1;
+    const result = delayTask(taskId, days);
+
+    if (result.error) {
+      setTaskErrors((prev) => ({ ...prev, [taskId]: result.error! }));
+      setTaskAdjustedNotes((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+    } else {
+      setTaskErrors((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+      setTaskAdjustedNotes((prev) => ({
+        ...prev,
+        [taskId]: result.movedTitles,
+      }));
+    }
+  };
+
   return (
-    <div
-      aria-live="polite"
-      className="mx-auto max-w-4xl space-y-10 px-4 py-8 sm:px-6"
-    >
+    <div className="mx-auto max-w-4xl space-y-10 px-4 py-8 sm:px-6">
+      {/* Accessible live region for screen readers */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+      >
+        {budgetAnnouncement}
+      </div>
+
       {/* 1. Header Section */}
       <header className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -140,20 +219,127 @@ export function PlanView() {
         </div>
       </header>
 
-      {/* 2. Budget Allocation & CSS Bar Chart */}
+      {/* 2. Budget Allocation & Interactive Controls */}
       <section aria-labelledby="budget-heading" className="space-y-6">
-        <header>
-          <h2
-            id="budget-heading"
-            className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2
+              id="budget-heading"
+              className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+            >
+              Budget Allocation
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Adjust sliders or rupee amounts. Other categories rebalance
+              automatically to keep the exact total.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleResetBudget}
+            className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring sm:self-auto"
           >
-            Budget Allocation
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            Optimized distribution using the Largest-Remainder Method,
-            accounting for occasion and guest count.
-          </p>
-        </header>
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Reset to suggested split</span>
+          </button>
+        </div>
+
+        {/* Live Total Indicator */}
+        <div className="flex items-center justify-between rounded-xl border border-border bg-surface/70 px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2">
+            <Sliders className="h-4 w-4 text-accent" aria-hidden="true" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Live Total
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-bold text-foreground">
+              ₹{liveTotal.toLocaleString("en-IN")}
+            </span>
+            <span className="text-xs text-muted">
+              / ₹{totalBudget.toLocaleString("en-IN")}
+            </span>
+            {liveTotal === totalBudget && (
+              <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-400">
+                <Check className="h-3 w-3" /> Exact
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Interactive Sliders & Number Inputs */}
+        <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
+            Interactive Category Sliders
+          </h3>
+          <div className="space-y-4">
+            {BUDGET_CATEGORIES.map((cat) => {
+              const amount = plan.budget[cat];
+              const pct = totalBudget > 0 ? (amount / totalBudget) * 100 : 0;
+              const formattedPct = pct.toFixed(1);
+              const sliderId = `slider-${cat}`;
+              const numberId = `number-${cat}`;
+
+              return (
+                <div
+                  key={cat}
+                  className="rounded-lg border border-border/60 bg-background/40 p-3.5 transition-colors hover:border-border"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label
+                      htmlFor={sliderId}
+                      className="text-xs font-semibold text-foreground cursor-pointer"
+                    >
+                      {CATEGORY_DISPLAY_NAMES[cat]}
+                    </label>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted">{formattedPct}%</span>
+                      <div className="relative flex items-center">
+                        <span
+                          className="pointer-events-none absolute left-2 text-xs text-muted"
+                          aria-hidden="true"
+                        >
+                          ₹
+                        </span>
+                        <input
+                          id={numberId}
+                          type="number"
+                          min={0}
+                          max={totalBudget}
+                          step={100}
+                          value={amount}
+                          onChange={(e) =>
+                            handleBudgetChange(cat, Number(e.target.value))
+                          }
+                          aria-label={`${CATEGORY_DISPLAY_NAMES[cat]} rupee amount`}
+                          className="w-28 rounded-lg border border-border bg-background py-1 pl-5 pr-2 text-right text-xs font-semibold text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 flex items-center gap-3">
+                    <input
+                      id={sliderId}
+                      type="range"
+                      min={0}
+                      max={totalBudget}
+                      step={100}
+                      value={amount}
+                      onChange={(e) =>
+                        handleBudgetChange(cat, Number(e.target.value))
+                      }
+                      aria-label={`${CATEGORY_DISPLAY_NAMES[cat]} budget slider`}
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-background accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* CSS Bar Chart */}
         <div
@@ -226,7 +412,9 @@ export function PlanView() {
               {BUDGET_CATEGORIES.map((cat) => {
                 const amount = plan.budget[cat];
                 const pct =
-                  totalBudget > 0 ? ((amount / totalBudget) * 100).toFixed(1) : "0.0";
+                  totalBudget > 0
+                    ? ((amount / totalBudget) * 100).toFixed(1)
+                    : "0.0";
                 return (
                   <tr
                     key={cat}
@@ -262,7 +450,7 @@ export function PlanView() {
         </div>
       </section>
 
-      {/* 3. Timeline Section */}
+      {/* 3. Timeline Section & Interactive Task Controls */}
       <section aria-labelledby="timeline-heading" className="space-y-6">
         <header>
           <h2
@@ -272,7 +460,8 @@ export function PlanView() {
             Planning Timeline
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Ordered roadmap leading up to celebration day.
+            Mark tasks complete, or delay by days to automatically cascade
+            deadlines to dependent tasks.
           </p>
         </header>
 
@@ -280,58 +469,182 @@ export function PlanView() {
           className="relative space-y-4 border-l-2 border-border pl-6 sm:pl-8"
           aria-label="Chronological celebration task timeline"
         >
-          {plan.timeline.map((task, idx) => (
-            <li key={task.id} className="relative">
-              {/* Dot marker */}
-              <span
-                className={`absolute -left-[31px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 bg-surface sm:-left-[39px] ${
-                  task.compressed
-                    ? "border-amber-400 bg-amber-400/20"
-                    : "border-accent bg-background"
-                }`}
-                aria-hidden="true"
-              />
+          {plan.timeline.map((task, idx) => {
+            const isDone = task.status === "done";
+            const delayValue = delayDaysMap[task.id] ?? 1;
+            const taskError = taskErrors[task.id];
+            const movedTitles = taskAdjustedNotes[task.id];
 
-              <article className="rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover/60">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-semibold text-muted">
-                      #{idx + 1}
-                    </span>
-                    <h3 className="text-sm font-semibold text-foreground">
-                      {task.title}
-                    </h3>
-                  </div>
+            return (
+              <li key={task.id} className="relative">
+                {/* Dot marker */}
+                <span
+                  className={`absolute -left-[31px] top-2 flex h-4 w-4 items-center justify-center rounded-full border-2 bg-surface sm:-left-[39px] ${
+                    isDone
+                      ? "border-emerald-500 bg-emerald-500/20"
+                      : task.compressed
+                      ? "border-amber-400 bg-amber-400/20"
+                      : "border-accent bg-background"
+                  }`}
+                  aria-hidden="true"
+                >
+                  {isDone && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  )}
+                </span>
 
-                  <div className="flex items-center gap-2">
-                    {task.compressed && (
-                      <span
-                        className="inline-flex items-center rounded-full border border-amber-600/50 bg-amber-950/60 px-2 py-0.5 text-[10px] font-semibold text-amber-300"
-                        title="Timeline lead time was compressed proportionally to fit before the event"
+                <article
+                  className={`rounded-xl border bg-surface p-4 transition-colors ${
+                    isDone
+                      ? "border-emerald-500/30 bg-surface/70"
+                      : "border-border hover:bg-surface-hover/60"
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-mono font-semibold text-muted">
+                          #{idx + 1}
+                        </span>
+
+                        {/* Text label for task status (not color alone) */}
+                        {isDone ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
+                            <CheckCircle2
+                              className="h-3 w-3"
+                              aria-hidden="true"
+                            />
+                            Completed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-muted">
+                            To-do
+                          </span>
+                        )}
+
+                        {task.compressed && (
+                          <span
+                            className="inline-flex items-center rounded-full border border-amber-600/50 bg-amber-950/60 px-2 py-0.5 text-[10px] font-semibold text-amber-300"
+                            title="Timeline lead time was compressed proportionally to fit before the event"
+                          >
+                            Compressed
+                          </span>
+                        )}
+
+                        <span className="inline-flex items-center gap-1 rounded bg-background px-2 py-0.5 text-xs font-medium text-foreground">
+                          <Clock
+                            className="h-3 w-3 text-accent"
+                            aria-hidden="true"
+                          />
+                          Due {task.dueDate}
+                        </span>
+                      </div>
+
+                      <h3
+                        className={`mt-1.5 text-sm font-semibold ${
+                          isDone
+                            ? "text-muted line-through"
+                            : "text-foreground"
+                        }`}
                       >
-                        Compressed
-                      </span>
-                    )}
-                    <span className="inline-flex items-center gap-1 rounded bg-background px-2 py-1 text-xs font-medium text-foreground">
-                      <Clock className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-                      Due {task.dueDate}
-                    </span>
-                  </div>
-                </div>
+                        {task.title}
+                      </h3>
 
-                {task.dependsOn.length > 0 && (
-                  <p className="mt-2 text-xs text-muted">
-                    Depends on:{" "}
-                    <span className="font-medium text-foreground/90">
-                      {task.dependsOn
-                        .map((depId) => taskTitleMap.get(depId) ?? depId)
-                        .join(", ")}
-                    </span>
-                  </p>
-                )}
-              </article>
-            </li>
-          ))}
+                      {task.dependsOn.length > 0 && (
+                        <p className="mt-1.5 text-xs text-muted">
+                          Depends on:{" "}
+                          <span className="font-medium text-foreground/90">
+                            {task.dependsOn
+                              .map((depId: string) => taskTitleMap.get(depId) ?? depId)
+                              .join(", ")}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Task Actions */}
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                      {/* Mark Done / To-do Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleTask(task.id)}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
+                          isDone
+                            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                            : "border-border bg-background text-foreground hover:bg-surface-hover"
+                        }`}
+                        aria-pressed={isDone}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>{isDone ? "Mark as to-do" : "Mark done"}</span>
+                      </button>
+
+                      {/* Delay Control */}
+                      {!isDone && (
+                        <div className="flex items-center gap-1.5">
+                          <label
+                            htmlFor={`delay-${task.id}`}
+                            className="sr-only"
+                          >
+                            Delay {task.title} by days
+                          </label>
+                          <input
+                            id={`delay-${task.id}`}
+                            type="number"
+                            min={1}
+                            max={30}
+                            value={delayValue}
+                            onChange={(e) =>
+                              setDelayDaysMap((prev) => ({
+                                ...prev,
+                                [task.id]: Math.max(
+                                  1,
+                                  Math.min(30, Number(e.target.value) || 1)
+                                ),
+                              }))
+                            }
+                            aria-label={`Days to delay ${task.title}`}
+                            className="w-14 rounded-lg border border-border bg-background py-1 px-2 text-center text-xs font-semibold text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleDelayTask(task.id)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <span>Delay</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Task Specific Error Notice */}
+                  {taskError && (
+                    <div
+                      role="alert"
+                      className="mt-3 flex items-start gap-1.5 rounded-md border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-300"
+                    >
+                      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
+                      <span>{taskError}</span>
+                    </div>
+                  )}
+
+                  {/* Dates Adjusted Note */}
+                  {movedTitles && movedTitles.length > 0 && (
+                    <div
+                      role="status"
+                      className="mt-3 flex items-start gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs text-emerald-300"
+                    >
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                      <span>
+                        Dates adjusted: {movedTitles.join(", ")}
+                      </span>
+                    </div>
+                  )}
+                </article>
+              </li>
+            );
+          })}
         </ol>
       </section>
 
@@ -369,7 +682,7 @@ export function PlanView() {
                     </h3>
                     <span
                       className={`text-xs font-semibold ${
-                        allDone ? "text-success font-bold" : "text-muted"
+                        allDone ? "text-emerald-400 font-bold" : "text-muted"
                       }`}
                     >
                       {completedCount} / {vendorGroup.items.length} done
@@ -423,7 +736,10 @@ export function PlanView() {
             </h2>
           </header>
 
-          <ol className="space-y-3.5 text-sm" aria-label="Celebration theme concepts">
+          <ol
+            className="space-y-3.5 text-sm"
+            aria-label="Celebration theme concepts"
+          >
             {plan.ideas.map((idea, idx) => (
               <li
                 key={idx}
@@ -450,7 +766,10 @@ export function PlanView() {
             </h2>
           </header>
 
-          <ul className="space-y-3 text-sm" aria-label="Celebration advisory notes">
+          <ul
+            className="space-y-3 text-sm"
+            aria-label="Celebration advisory notes"
+          >
             {plan.notes.map((note, idx) => (
               <li
                 key={idx}
@@ -465,4 +784,3 @@ export function PlanView() {
     </div>
   );
 }
-

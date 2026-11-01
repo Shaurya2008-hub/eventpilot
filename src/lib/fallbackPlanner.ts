@@ -330,6 +330,7 @@ export function generateFallbackPlan(input: PlanInput, today: string): Plan {
     source: "fallback",
     input: validatedInput,
     budget,
+    originalBudget: { ...budget },
     timeline,
     vendorChecklist,
     ideas,

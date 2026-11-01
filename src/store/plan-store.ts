@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Plan } from "@/lib/schemas";
+import type { BudgetCategory } from "@/lib/budget";
+import {
+  applyBudgetChange,
+  resetPlanBudget,
+  toggleTaskStatus,
+  delayTaskInPlan,
+} from "@/lib/planHelpers";
 
 export interface PlanState {
   eventName: string;
@@ -9,6 +16,10 @@ export interface PlanState {
   setEventName: (name: string) => void;
   setBudget: (amount: number) => void;
   setPlan: (plan: Plan | null) => void;
+  updateCategoryBudget: (category: BudgetCategory, amount: number) => void;
+  resetBudgetToSuggested: () => void;
+  toggleTaskStatus: (taskId: string) => void;
+  delayTask: (taskId: string, days: number) => { movedTitles: string[]; error?: string };
   toggleChecklistItem: (vendorIndex: number, itemIndex: number) => void;
   reset: () => void;
   startNewPlan: () => void;
@@ -22,16 +33,57 @@ const initialState = {
 
 export const usePlanStore = create<PlanState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initialState,
       setEventName: (name: string) => set({ eventName: name }),
       setBudget: (amount: number) => set({ budget: amount }),
-      setPlan: (plan: Plan | null) =>
+      setPlan: (plan: Plan | null) => {
+        if (!plan) {
+          set({ plan: null, eventName: "", budget: 0 });
+          return;
+        }
+        const safePlan: Plan = {
+          ...plan,
+          originalBudget: plan.originalBudget ?? { ...plan.budget },
+        };
         set({
-          plan,
-          eventName: plan ? `${plan.input.occasion} in ${plan.input.city}` : "",
-          budget: plan ? plan.input.budget : 0,
+          plan: safePlan,
+          eventName: `${safePlan.input.occasion} in ${safePlan.input.city}`,
+          budget: safePlan.input.budget,
+        });
+      },
+      updateCategoryBudget: (category: BudgetCategory, amount: number) =>
+        set((state) => {
+          if (!state.plan) return state;
+          const updatedPlan = applyBudgetChange(state.plan, category, amount);
+          return { plan: updatedPlan };
         }),
+      resetBudgetToSuggested: () =>
+        set((state) => {
+          if (!state.plan) return state;
+          const updatedPlan = resetPlanBudget(state.plan);
+          return { plan: updatedPlan };
+        }),
+      toggleTaskStatus: (taskId: string) =>
+        set((state) => {
+          if (!state.plan) return state;
+          const updatedPlan = toggleTaskStatus(state.plan, taskId);
+          return { plan: updatedPlan };
+        }),
+      delayTask: (taskId: string, days: number) => {
+        const state = get();
+        if (!state.plan) {
+          return { movedTitles: [], error: "No active plan" };
+        }
+        const result = delayTaskInPlan(state.plan, taskId, days);
+        if (!result.error) {
+          set({ plan: result.plan });
+        }
+        return {
+          movedTitles: result.movedTaskTitles,
+          error: result.error,
+        };
+      },
       toggleChecklistItem: (vendorIndex: number, itemIndex: number) =>
         set((state) => {
           if (!state.plan) return state;

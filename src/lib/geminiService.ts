@@ -245,6 +245,7 @@ export async function generateAiPlan(
             source: "ai",
             modelUsed: model,
             budget,
+            originalBudget: { ...budget },
             ideas: aiData.ideas,
             notes: aiData.notes,
           };

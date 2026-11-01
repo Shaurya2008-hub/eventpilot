@@ -150,6 +150,7 @@ export const planSchema = z.object({
   source: z.enum(["ai", "fallback"]),
   input: planInputSchema,
   budget: budgetAllocationsSchema,
+  originalBudget: budgetAllocationsSchema.optional(),
   timeline: z.array(taskSchema),
   vendorChecklist: z.array(vendorChecklistSchema),
   ideas: z.array(z.string()),
@@ -162,6 +163,7 @@ export type Plan = {
   source: "ai" | "fallback";
   input: PlanInput;
   budget: BudgetAllocations;
+  originalBudget?: BudgetAllocations;
   timeline: Task[];
   vendorChecklist: { vendor: string; items: { label: string; done: boolean }[] }[];
   ideas: string[];
