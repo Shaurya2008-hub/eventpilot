@@ -8,11 +8,13 @@ import {
   toggleTaskStatus,
   delayTaskInPlan,
 } from "@/lib/planHelpers";
+import { applyWhatIf, type WhatIfInputs } from "@/lib/whatIf";
 
 export interface PlanState {
   eventName: string;
   budget: number;
   plan: Plan | null;
+  previousPlan: Plan | null;
   setEventName: (name: string) => void;
   setBudget: (amount: number) => void;
   setPlan: (plan: Plan | null) => void;
@@ -21,6 +23,8 @@ export interface PlanState {
   toggleTaskStatus: (taskId: string) => void;
   delayTask: (taskId: string, days: number) => { movedTitles: string[]; error?: string };
   toggleChecklistItem: (vendorIndex: number, itemIndex: number) => void;
+  applyWhatIfChange: (inputs: WhatIfInputs, today: string) => { explanation: string; error?: string };
+  undoWhatIf: () => boolean;
   reset: () => void;
   startNewPlan: () => void;
 }
@@ -28,7 +32,8 @@ export interface PlanState {
 const initialState = {
   eventName: "",
   budget: 0,
-  plan: null,
+  plan: null as Plan | null,
+  previousPlan: null as Plan | null,
 };
 
 export const usePlanStore = create<PlanState>()(
@@ -104,6 +109,36 @@ export const usePlanStore = create<PlanState>()(
             },
           };
         }),
+      applyWhatIfChange: (inputs: WhatIfInputs, today: string) => {
+        const state = get();
+        if (!state.plan) {
+          return { explanation: "", error: "No active plan" };
+        }
+        const result = applyWhatIf(state.plan, inputs, today);
+        if (result.error) {
+          return { explanation: "", error: result.error };
+        }
+        set({
+          previousPlan: state.plan,
+          plan: result.plan,
+          eventName: `${result.plan.input.occasion} in ${result.plan.input.city}`,
+          budget: result.plan.input.budget,
+        });
+        return { explanation: result.explanation };
+      },
+      undoWhatIf: () => {
+        const state = get();
+        if (!state.previousPlan) {
+          return false;
+        }
+        set({
+          plan: state.previousPlan,
+          previousPlan: null,
+          eventName: `${state.previousPlan.input.occasion} in ${state.previousPlan.input.city}`,
+          budget: state.previousPlan.input.budget,
+        });
+        return true;
+      },
       reset: () => set({ ...initialState }),
       startNewPlan: () => set({ ...initialState }),
     }),

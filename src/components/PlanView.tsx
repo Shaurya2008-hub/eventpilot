@@ -19,6 +19,7 @@ import {
   Sliders,
 } from "lucide-react";
 import { getLocalTodayString } from "./GuidedPlanForm";
+import { WhatIfPanel } from "./WhatIfPanel";
 
 const CATEGORY_DISPLAY_NAMES: Record<BudgetCategory, string> = {
   venue: "Venue & Hall",
@@ -219,7 +220,10 @@ export function PlanView() {
         </div>
       </header>
 
-      {/* 2. Budget Allocation & Interactive Controls */}
+      {/* 2. "What If?" Scenario Planning Panel */}
+      <WhatIfPanel />
+
+      {/* 3. Budget Allocation & Interactive Controls */}
       <section aria-labelledby="budget-heading" className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
