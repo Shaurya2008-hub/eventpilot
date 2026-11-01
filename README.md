@@ -5,7 +5,6 @@ AI-powered celebration planner for budget-conscious Indian families — turn a f
 Built for **PromptWars Virtual — Challenge 5** (Hack2Skill x Google for Developers).
 
 **Live:** https://eventpilot-zeta.vercel.app
-**Repo:** https://github.com/Shaurya2008-hub/eventpilot
 
 ---
 
