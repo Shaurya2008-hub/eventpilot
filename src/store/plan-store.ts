@@ -10,11 +10,20 @@ import {
 } from "@/lib/planHelpers";
 import { applyWhatIf, type WhatIfInputs } from "@/lib/whatIf";
 
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+  isError?: boolean;
+}
+
 export interface PlanState {
   eventName: string;
   budget: number;
   plan: Plan | null;
   previousPlan: Plan | null;
+  chatMessages: ChatMessage[];
   setEventName: (name: string) => void;
   setBudget: (amount: number) => void;
   setPlan: (plan: Plan | null) => void;
@@ -25,6 +34,8 @@ export interface PlanState {
   toggleChecklistItem: (vendorIndex: number, itemIndex: number) => void;
   applyWhatIfChange: (inputs: WhatIfInputs, today: string) => { explanation: string; error?: string };
   undoWhatIf: () => boolean;
+  addChatMessage: (message: Omit<ChatMessage, "id" | "timestamp">) => void;
+  clearChatMessages: () => void;
   reset: () => void;
   startNewPlan: () => void;
 }
@@ -34,6 +45,7 @@ const initialState = {
   budget: 0,
   plan: null as Plan | null,
   previousPlan: null as Plan | null,
+  chatMessages: [] as ChatMessage[],
 };
 
 export const usePlanStore = create<PlanState>()(
@@ -139,6 +151,18 @@ export const usePlanStore = create<PlanState>()(
         });
         return true;
       },
+      addChatMessage: (msg: Omit<ChatMessage, "id" | "timestamp">) =>
+        set((state) => ({
+          chatMessages: [
+            ...state.chatMessages,
+            {
+              ...msg,
+              id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              timestamp: new Date().toISOString(),
+            },
+          ],
+        })),
+      clearChatMessages: () => set({ chatMessages: [] }),
       reset: () => set({ ...initialState }),
       startNewPlan: () => set({ ...initialState }),
     }),

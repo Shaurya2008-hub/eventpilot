@@ -79,7 +79,9 @@ body {
   input,
   [role="progressbar"],
   [aria-labelledby="what-if-heading"],
-  .what-if-section {
+  .what-if-section,
+  #chat-drawer-panel,
+  [aria-labelledby="chat-drawer-title"] {
     display: none !important;
   }
 

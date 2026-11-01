@@ -23,6 +23,7 @@ import {
 import { getLocalTodayString } from "./GuidedPlanForm";
 import { WhatIfPanel } from "./WhatIfPanel";
 import { downloadPlanAsText } from "@/lib/exportPlan";
+import { ChatDrawer } from "./ChatDrawer";
 
 const CATEGORY_DISPLAY_NAMES: Record<BudgetCategory, string> = {
   venue: "Venue & Hall",
@@ -819,6 +820,9 @@ export function PlanView() {
           </ul>
         </section>
       </div>
+
+      {/* Floating Chat Drawer */}
+      <ChatDrawer />
     </div>
   );
 }
