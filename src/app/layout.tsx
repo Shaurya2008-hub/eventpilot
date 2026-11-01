@@ -19,7 +19,7 @@ export default function RootLayout({
           Skip to content
         </a>
 
-        <header className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur supports-[backdrop-filter]:bg-surface/60">
+        <header className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur supports-[backdrop-filter]:bg-surface/60 no-print">
           <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
             <a
               href="/"
@@ -54,7 +54,7 @@ export default function RootLayout({
           {children}
         </main>
 
-        <footer className="border-t border-border py-6 text-center text-xs text-muted">
+        <footer className="border-t border-border py-6 text-center text-xs text-muted no-print">
           <p>
             &copy; <FooterYear /> EventPilot &mdash; Made with ❤️ for budget-conscious
             Indian families

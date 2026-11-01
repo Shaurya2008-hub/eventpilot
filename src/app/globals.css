@@ -62,3 +62,93 @@ body {
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* -------------------------------------------------------------
+   Print-Specific Styles
+   Hides interactive controls, nav, buttons, what-if panel, sliders
+   Lays out budget table, timeline, and checklist cleanly on paper
+   ------------------------------------------------------------- */
+@media print {
+  /* Hide navigation, footers, buttons, and interactive controls */
+  header.sticky,
+  nav,
+  footer,
+  .skip-to-content,
+  .no-print,
+  button,
+  input,
+  [role="progressbar"],
+  [aria-labelledby="what-if-heading"],
+  .what-if-section {
+    display: none !important;
+  }
+
+  /* Reset body and background for crisp monochrome/grayscale printing */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 10.5pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Remove dark surface fills, shadows, and neon tints */
+  header,
+  section,
+  article,
+  table,
+  div {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  .bg-surface,
+  .bg-background {
+    background-color: #ffffff !important;
+    border-color: #e5e7eb !important;
+  }
+
+  .text-foreground,
+  .text-muted,
+  .text-accent,
+  h1, h2, h3, h4, p, span, th, td, time {
+    color: #111827 !important;
+  }
+
+  /* Ensure containers don't create awkward blank page breaks */
+  article,
+  section,
+  table,
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Clean table borders for print */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 0.5rem !important;
+  }
+
+  th,
+  td {
+    border: 1px solid #d1d5db !important;
+    padding: 6px 10px !important;
+    color: #111827 !important;
+  }
+
+  tfoot {
+    border-top: 2px solid #111827 !important;
+  }
+
+  /* Timeline line styling for print */
+  ol {
+    border-left: 2px solid #9ca3af !important;
+  }
+
+  ol li span[aria-hidden="true"] {
+    background-color: #ffffff !important;
+    border-color: #111827 !important;
+  }
+}

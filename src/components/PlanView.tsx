@@ -17,9 +17,12 @@ import {
   Clock,
   Check,
   Sliders,
+  Printer,
+  Download,
 } from "lucide-react";
 import { getLocalTodayString } from "./GuidedPlanForm";
 import { WhatIfPanel } from "./WhatIfPanel";
+import { downloadPlanAsText } from "@/lib/exportPlan";
 
 const CATEGORY_DISPLAY_NAMES: Record<BudgetCategory, string> = {
   venue: "Venue & Hall",
@@ -208,20 +211,51 @@ export function PlanView() {
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={startNewPlan}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            {/* Action Bar: Print, Download as .txt, Start New Plan */}
+            <div
+              className="flex flex-wrap items-center gap-2 no-print"
+              role="toolbar"
+              aria-label="Plan actions"
             >
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Start a new plan</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Print celebration plan"
+                title="Print celebration plan"
+              >
+                <Printer className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+                <span>Print</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => downloadPlanAsText(plan)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Download plan as .txt file"
+                title="Download plan as .txt file"
+              >
+                <Download className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+                <span>Download as .txt</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={startNewPlan}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Start a new plan</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* 2. "What If?" Scenario Planning Panel */}
-      <WhatIfPanel />
+      <div className="no-print">
+        <WhatIfPanel />
+      </div>
 
       {/* 3. Budget Allocation & Interactive Controls */}
       <section aria-labelledby="budget-heading" className="space-y-6">
@@ -242,7 +276,7 @@ export function PlanView() {
           <button
             type="button"
             onClick={handleResetBudget}
-            className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring sm:self-auto"
+            className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring sm:self-auto no-print"
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Reset to suggested split</span>
@@ -250,7 +284,7 @@ export function PlanView() {
         </div>
 
         {/* Live Total Indicator */}
-        <div className="flex items-center justify-between rounded-xl border border-border bg-surface/70 px-4 py-3 sm:px-6">
+        <div className="flex items-center justify-between rounded-xl border border-border bg-surface/70 px-4 py-3 sm:px-6 no-print">
           <div className="flex items-center gap-2">
             <Sliders className="h-4 w-4 text-accent" aria-hidden="true" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -273,7 +307,7 @@ export function PlanView() {
         </div>
 
         {/* Interactive Sliders & Number Inputs */}
-        <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
+        <div className="rounded-xl border border-border bg-surface p-5 space-y-4 no-print">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
             Interactive Category Sliders
           </h3>
@@ -567,7 +601,7 @@ export function PlanView() {
                     </div>
 
                     {/* Task Actions */}
-                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto no-print">
                       {/* Mark Done / To-do Toggle */}
                       <button
                         type="button"
@@ -626,7 +660,7 @@ export function PlanView() {
                   {taskError && (
                     <div
                       role="alert"
-                      className="mt-3 flex items-start gap-1.5 rounded-md border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-300"
+                      className="mt-3 flex items-start gap-1.5 rounded-md border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-300 no-print"
                     >
                       <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
                       <span>{taskError}</span>
@@ -637,7 +671,7 @@ export function PlanView() {
                   {movedTitles && movedTitles.length > 0 && (
                     <div
                       role="status"
-                      className="mt-3 flex items-start gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs text-emerald-300"
+                      className="mt-3 flex items-start gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs text-emerald-300 no-print"
                     >
                       <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
                       <span>
